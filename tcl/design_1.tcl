@@ -123,9 +123,8 @@ set bCheckIPsPassed 1
 set bCheckIPs 1
 if { $bCheckIPs == 1 } {
    set list_check_ips "\ 
+xilinx.com:user:DDC_2:1.0\
 xilinx.com:ip:axi_iic:2.1\
-xilinx.com:ip:dds_compiler:6.0\
-jhuapl.edu:user:doug_custom:1.0\
 jhuapl.edu:user:lowlevel_dac_intfc:1.1\
 xilinx.com:ip:processing_system7:5.5\
 xilinx.com:ip:proc_sys_reset:5.0\
@@ -208,31 +207,15 @@ proc create_root_design { parentCell } {
   set mclk [ create_bd_port -dir O mclk ]
   set sdata [ create_bd_port -dir O sdata ]
 
+  # Create instance: DDC_2_0, and set properties
+  set DDC_2_0 [ create_bd_cell -type ip -vlnv xilinx.com:user:DDC_2:1.0 DDC_2_0 ]
+
   # Create instance: axi_iic_0, and set properties
   set axi_iic_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_iic:2.1 axi_iic_0 ]
   set_property -dict [ list \
    CONFIG.IIC_BOARD_INTERFACE {Custom} \
    CONFIG.USE_BOARD_FLOW {true} \
  ] $axi_iic_0
-
-  # Create instance: dds_compiler_0, and set properties
-  set dds_compiler_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:dds_compiler:6.0 dds_compiler_0 ]
-  set_property -dict [ list \
-   CONFIG.DDS_Clock_Rate {125} \
-   CONFIG.Frequency_Resolution {0.4} \
-   CONFIG.Has_Phase_Out {false} \
-   CONFIG.Latency {8} \
-   CONFIG.M_DATA_Has_TUSER {Not_Required} \
-   CONFIG.Noise_Shaping {Auto} \
-   CONFIG.Output_Frequency1 {0.007} \
-   CONFIG.Output_Width {15} \
-   CONFIG.PINC1 {111010101110000} \
-   CONFIG.Phase_Width {29} \
-   CONFIG.Spurious_Free_Dynamic_Range {90} \
- ] $dds_compiler_0
-
-  # Create instance: doug_custom_0, and set properties
-  set doug_custom_0 [ create_bd_cell -type ip -vlnv jhuapl.edu:user:doug_custom:1.0 doug_custom_0 ]
 
   # Create instance: lowlevel_dac_intfc_0, and set properties
   set lowlevel_dac_intfc_0 [ create_bd_cell -type ip -vlnv jhuapl.edu:user:lowlevel_dac_intfc:1.1 lowlevel_dac_intfc_0 ]
@@ -725,7 +708,7 @@ gpio[0]#qspi0_ss_b#qspi0_io[0]#qspi0_io[1]#qspi0_io[2]#qspi0_io[3]/HOLD_B#qspi0_
   # Create instance: ps7_0_axi_periph, and set properties
   set ps7_0_axi_periph [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 ps7_0_axi_periph ]
   set_property -dict [ list \
-   CONFIG.NUM_MI {2} \
+   CONFIG.NUM_MI {3} \
  ] $ps7_0_axi_periph
 
   # Create instance: rst_ps7_0_125M, and set properties
@@ -744,30 +727,30 @@ gpio[0]#qspi0_ss_b#qspi0_io[0]#qspi0_io[1]#qspi0_io[2]#qspi0_io[3]/HOLD_B#qspi0_
  ] $system_ila_0
 
   # Create interface connections
+  connect_bd_intf_net -intf_net DDC_1_data [get_bd_intf_pins DDC_2_0/out] [get_bd_intf_pins lowlevel_dac_intfc_0/data_in]
+connect_bd_intf_net -intf_net [get_bd_intf_nets DDC_1_data] [get_bd_intf_pins lowlevel_dac_intfc_0/data_in] [get_bd_intf_pins system_ila_0/SLOT_0_AXIS]
   connect_bd_intf_net -intf_net axi_iic_0_IIC [get_bd_intf_ports IIC_0] [get_bd_intf_pins axi_iic_0/IIC]
-  connect_bd_intf_net -intf_net dds_compiler_0_M_AXIS_DATA [get_bd_intf_pins dds_compiler_0/M_AXIS_DATA] [get_bd_intf_pins lowlevel_dac_intfc_0/data_in]
-connect_bd_intf_net -intf_net [get_bd_intf_nets dds_compiler_0_M_AXIS_DATA] [get_bd_intf_pins dds_compiler_0/M_AXIS_DATA] [get_bd_intf_pins system_ila_0/SLOT_0_AXIS]
   connect_bd_intf_net -intf_net processing_system7_0_DDR [get_bd_intf_ports DDR] [get_bd_intf_pins processing_system7_0/DDR]
   connect_bd_intf_net -intf_net processing_system7_0_FIXED_IO [get_bd_intf_ports FIXED_IO] [get_bd_intf_pins processing_system7_0/FIXED_IO]
   connect_bd_intf_net -intf_net processing_system7_0_M_AXI_GP0 [get_bd_intf_pins processing_system7_0/M_AXI_GP0] [get_bd_intf_pins ps7_0_axi_periph/S00_AXI]
   connect_bd_intf_net -intf_net processing_system7_0_UART_1 [get_bd_intf_ports UART_1_0] [get_bd_intf_pins processing_system7_0/UART_1]
-  connect_bd_intf_net -intf_net ps7_0_axi_periph_M00_AXI [get_bd_intf_pins doug_custom_0/S00_AXI] [get_bd_intf_pins ps7_0_axi_periph/M00_AXI]
+  connect_bd_intf_net -intf_net ps7_0_axi_periph_M00_AXI [get_bd_intf_pins axi_iic_0/S_AXI] [get_bd_intf_pins ps7_0_axi_periph/M00_AXI]
 connect_bd_intf_net -intf_net [get_bd_intf_nets ps7_0_axi_periph_M00_AXI] [get_bd_intf_pins ps7_0_axi_periph/M00_AXI] [get_bd_intf_pins system_ila_0/SLOT_1_AXI]
-  connect_bd_intf_net -intf_net ps7_0_axi_periph_M01_AXI [get_bd_intf_pins axi_iic_0/S_AXI] [get_bd_intf_pins ps7_0_axi_periph/M01_AXI]
+  connect_bd_intf_net -intf_net ps7_0_axi_periph_M01_AXI [get_bd_intf_pins DDC_2_0/config] [get_bd_intf_pins ps7_0_axi_periph/M01_AXI]
 
   # Create port connections
   connect_bd_net -net lowlevel_dac_intfc_0_bclk [get_bd_ports bclk] [get_bd_pins lowlevel_dac_intfc_0/bclk]
   connect_bd_net -net lowlevel_dac_intfc_0_lrck [get_bd_ports lrck] [get_bd_pins lowlevel_dac_intfc_0/lrck]
   connect_bd_net -net lowlevel_dac_intfc_0_mclk [get_bd_ports mclk] [get_bd_pins lowlevel_dac_intfc_0/mclk]
   connect_bd_net -net lowlevel_dac_intfc_0_sdata [get_bd_ports sdata] [get_bd_pins lowlevel_dac_intfc_0/sdata]
-  connect_bd_net -net processing_system7_0_FCLK_CLK0 [get_bd_pins axi_iic_0/s_axi_aclk] [get_bd_pins dds_compiler_0/aclk] [get_bd_pins doug_custom_0/s00_axi_aclk] [get_bd_pins lowlevel_dac_intfc_0/clk125] [get_bd_pins processing_system7_0/FCLK_CLK0] [get_bd_pins processing_system7_0/M_AXI_GP0_ACLK] [get_bd_pins ps7_0_axi_periph/ACLK] [get_bd_pins ps7_0_axi_periph/M00_ACLK] [get_bd_pins ps7_0_axi_periph/M01_ACLK] [get_bd_pins ps7_0_axi_periph/S00_ACLK] [get_bd_pins rst_ps7_0_125M/slowest_sync_clk] [get_bd_pins system_ila_0/clk]
+  connect_bd_net -net processing_system7_0_FCLK_CLK0 [get_bd_pins DDC_2_0/config_aclk] [get_bd_pins axi_iic_0/s_axi_aclk] [get_bd_pins lowlevel_dac_intfc_0/clk125] [get_bd_pins processing_system7_0/FCLK_CLK0] [get_bd_pins processing_system7_0/M_AXI_GP0_ACLK] [get_bd_pins ps7_0_axi_periph/ACLK] [get_bd_pins ps7_0_axi_periph/M00_ACLK] [get_bd_pins ps7_0_axi_periph/M01_ACLK] [get_bd_pins ps7_0_axi_periph/M02_ACLK] [get_bd_pins ps7_0_axi_periph/S00_ACLK] [get_bd_pins rst_ps7_0_125M/slowest_sync_clk] [get_bd_pins system_ila_0/clk]
   connect_bd_net -net processing_system7_0_FCLK_RESET0_N [get_bd_pins processing_system7_0/FCLK_RESET0_N] [get_bd_pins rst_ps7_0_125M/ext_reset_in]
-  connect_bd_net -net rst_ps7_0_125M_peripheral_aresetn [get_bd_pins axi_iic_0/s_axi_aresetn] [get_bd_pins doug_custom_0/s00_axi_aresetn] [get_bd_pins ps7_0_axi_periph/ARESETN] [get_bd_pins ps7_0_axi_periph/M00_ARESETN] [get_bd_pins ps7_0_axi_periph/M01_ARESETN] [get_bd_pins ps7_0_axi_periph/S00_ARESETN] [get_bd_pins rst_ps7_0_125M/peripheral_aresetn] [get_bd_pins system_ila_0/resetn]
+  connect_bd_net -net rst_ps7_0_125M_peripheral_aresetn [get_bd_pins DDC_2_0/config_aresetn] [get_bd_pins axi_iic_0/s_axi_aresetn] [get_bd_pins ps7_0_axi_periph/ARESETN] [get_bd_pins ps7_0_axi_periph/M00_ARESETN] [get_bd_pins ps7_0_axi_periph/M01_ARESETN] [get_bd_pins ps7_0_axi_periph/M02_ARESETN] [get_bd_pins ps7_0_axi_periph/S00_ARESETN] [get_bd_pins rst_ps7_0_125M/peripheral_aresetn] [get_bd_pins system_ila_0/resetn]
   connect_bd_net -net rst_ps7_0_125M_peripheral_reset [get_bd_pins lowlevel_dac_intfc_0/rst] [get_bd_pins rst_ps7_0_125M/peripheral_reset]
 
   # Create address segments
+  assign_bd_address -offset 0x43C00000 -range 0x00010000 -target_address_space [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs DDC_2_0/config/config_reg] -force
   assign_bd_address -offset 0x41600000 -range 0x00010000 -target_address_space [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs axi_iic_0/S_AXI/Reg] -force
-  assign_bd_address -offset 0x43C00000 -range 0x00010000 -target_address_space [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs doug_custom_0/S00_AXI/S00_AXI_reg] -force
 
 
   # Restore current instance

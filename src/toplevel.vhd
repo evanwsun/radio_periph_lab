@@ -98,6 +98,11 @@ architecture STRUCTURE of design_1_wrapper is
   signal IIC_0_sda_i : STD_LOGIC;
   signal IIC_0_sda_o : STD_LOGIC;
   signal IIC_0_sda_t : STD_LOGIC;
+  attribute mark_debug : string;
+  attribute mark_debug of sdata : signal is "true";
+  attribute mark_debug of mclk : signal is "true";
+  attribute mark_debug of lrck : signal is "true";
+  attribute mark_debug of bclk : signal is "true";  
 begin
 IIC_0_scl_iobuf: component IOBUF
      port map (
@@ -149,6 +154,5 @@ design_1_i: component design_1
       mclk => mclk,
       sdata => sdata
     );
-    
 ac_muten <= '1';    
 end STRUCTURE;
